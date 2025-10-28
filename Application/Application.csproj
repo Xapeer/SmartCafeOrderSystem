@@ -7,14 +7,17 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Folder Include="Common\" />
       <Folder Include="Dtos\" />
-      <Folder Include="Interfaces\" />
+      <Folder Include="Filters\" />
       <Folder Include="Services\" />
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\Domain\Domain.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.10" />
     </ItemGroup>
 
 </Project>
