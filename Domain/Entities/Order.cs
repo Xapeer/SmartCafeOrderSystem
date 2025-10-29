@@ -6,7 +6,7 @@ public class Order
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? CompletedAt { get; set; }
     public decimal TotalAmount { get; set; }
-    public decimal DiscountAmount { get; set; } = 0;
+    public decimal DiscountAmount { get; set; }
     public OrderStatus Status { get; set; } = OrderStatus.Created; 
 
     public int TableId { get; set; }
@@ -22,6 +22,7 @@ public class Order
 public enum OrderStatus
 {
     Created,
+    Confirmed,
     Paid,
     Cancelled
 }
