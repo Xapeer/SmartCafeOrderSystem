@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 
-namespace Infrastructure.Configurations;
+namespace Infrastructure;
 
 public class Seeder
 {

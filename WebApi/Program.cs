@@ -23,10 +23,19 @@ builder.Host.UseSerilog();
 
 var connectionString = builder.Configuration.GetConnectionString("Default");
 builder.Services.AddDbContext<IDataContext, DataContext>(opt => opt.UseNpgsql(connectionString));
-builder.Services.AddIdentity<IdentityUser, IdentityRole>()
+builder.Services.AddScoped<IAuthService, AuthService>();
+
+builder.Services.AddIdentityCore<IdentityUser>(config =>
+    {
+        config.Password.RequiredLength = 4;
+        config.Password.RequireDigit = true;
+        config.Password.RequireNonAlphanumeric = false;
+        config.Password.RequireUppercase = false;
+        config.Password.RequireLowercase = false;
+    })
+    .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<DataContext>()
     .AddDefaultTokenProviders();
-builder.Services.AddScoped<IAuthService, AuthService>();
 
 builder.Services.AddScoped<Seeder>();
 

@@ -3,6 +3,8 @@ using System.Security.Claims;
 using System.Text;
 using Application.Common;
 using Application.Dtos;
+using Application.Interfaces;
+using Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
@@ -14,15 +16,18 @@ public class AuthService : IAuthService
     private readonly UserManager<IdentityUser> _userManager;
     private readonly RoleManager<IdentityRole> _roleManager;
     private readonly IConfiguration _configuration;
+    private IDataContext _context;
 
     public AuthService(
         UserManager<IdentityUser> userManager,
         RoleManager<IdentityRole> roleManager,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IDataContext context)
     {
         _userManager = userManager;
         _roleManager = roleManager;
         _configuration = configuration;
+        _context = context;
     }
 
     private async Task<TokenDto> GenerateJwtToken(IdentityUser user)
@@ -71,13 +76,19 @@ public class AuthService : IAuthService
             var errors = string.Join("; ", result.Errors.Select(e => e.Description));
             return new Response<RegisterDto>(400, errors);
         }
+        
+        await _userManager.AddToRoleAsync(user, "Waiter");
 
-        const string roleName = "Waiter";
-        if (!await _roleManager.RoleExistsAsync(roleName))
-            await _roleManager.CreateAsync(new IdentityRole(roleName));
-
-        await _userManager.AddToRoleAsync(user, roleName);
-        return new Response<RegisterDto>(200, "User registered successfully", dto);
+        var employee = new Employee()
+        {
+            Name = dto.Name,
+            IdentityUserId = user.Id
+        };
+        
+        _context.Employees.Add(employee);
+        await _context.SaveChangesAsync();
+        
+        return new Response<RegisterDto>(200, "User registered successfully");
     }
 
     public async Task<Response<TokenDto>> LoginAsync(LoginDto dto)
