@@ -1,0 +1,48 @@
+﻿using Application.Dtos.Order;
+using Application.Interfaces;
+using Infrastructure;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace WebApi.Controllers;
+
+//[Authorize(Roles = Roles.Waiter)]
+[ApiController]
+[Route("api/[controller]")]
+public class OrderController(IOrderService service) : Controller
+{
+    [HttpPost("create-order")]
+    public async Task<IActionResult> CreateOrder([FromBody] CreateOrderDto dto)
+    {
+        var response = await service.CreateOrderAsync(dto);
+        return StatusCode(response.StatusCode, response);
+    }
+    
+    [HttpPost("add-order-item")]
+    public async Task<IActionResult> AddOrderItem(int orderId, int menuItemId)
+    {
+        var response = await service.AddOrderItemAsync(orderId, menuItemId);
+        return StatusCode(response.StatusCode, response);
+    }
+
+    [HttpDelete("remove-order-item")]
+    public async Task<IActionResult> RemoveOrderItem(int orderId, int orderItemId)
+    {
+        var response = await service.RemoveOrderItemAsync(orderId, orderItemId);
+        return StatusCode(response.StatusCode, response);
+    }
+
+    [HttpPost("confirm-order")]
+    public async Task<IActionResult> ConfirmOrder(int orderId)
+    {
+        var response = await service.ConfirmOrderAsync(orderId);
+        return StatusCode(response.StatusCode, response);
+    }
+
+    [HttpPost("cancel-order")]
+    public async Task<IActionResult> CancelOrder(int orderId)
+    {
+        var response = await service.CancelOrderAsync(orderId);
+        return StatusCode(response.StatusCode, response);
+    }
+}

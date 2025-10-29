@@ -24,6 +24,7 @@ builder.Host.UseSerilog();
 var connectionString = builder.Configuration.GetConnectionString("Default");
 builder.Services.AddDbContext<IDataContext, DataContext>(opt => opt.UseNpgsql(connectionString));
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IOrderService, OrderService>();
 
 builder.Services.AddIdentityCore<IdentityUser>(config =>
     {
