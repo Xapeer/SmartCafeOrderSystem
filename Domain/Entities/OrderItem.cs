@@ -21,5 +21,6 @@ public enum OrderItemStatus
     New,
     Started,
     Ready,
+    Served,
     Cancelled
 }

@@ -1,4 +1,5 @@
 ﻿using Application.Dtos.Order;
+using Application.Filters.Order;
 using Application.Interfaces;
 using Infrastructure;
 using Microsoft.AspNetCore.Authorization;
@@ -6,11 +7,25 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace WebApi.Controllers;
 
-//[Authorize(Roles = Roles.Waiter)]
+//[Authorize(Roles = $"{Roles.Waiter}, {Roles.Admin}")]
 [ApiController]
 [Route("api/[controller]")]
 public class OrderController(IOrderService service) : Controller
 {
+    [HttpGet("get-all-orders")]
+    public async Task<IActionResult> GetAllOrders([FromQuery] AllOrderFilter filter)
+    {
+        var response = await service.GetAllOrdersAsync(filter);
+        return StatusCode(response.StatusCode, response);
+    }
+
+    [HttpGet("get-single-order")]
+    public async Task<IActionResult> GetSingleOrder([FromQuery] SingleOrderFilter filter)
+    {
+        var response = await service.GetSingleOrderAsync(filter);
+        return StatusCode(response.StatusCode, response);
+    }
+    
     [HttpPost("create-order")]
     public async Task<IActionResult> CreateOrder([FromBody] CreateOrderDto dto)
     {
@@ -36,6 +51,13 @@ public class OrderController(IOrderService service) : Controller
     public async Task<IActionResult> ConfirmOrder(int orderId)
     {
         var response = await service.ConfirmOrderAsync(orderId);
+        return StatusCode(response.StatusCode, response);
+    }
+    
+    [HttpPost("pay-for-order")]
+    public async Task<IActionResult> PayForOrder(int orderId)
+    {
+        var response = await service.PayForOrderAsync(orderId);
         return StatusCode(response.StatusCode, response);
     }
 

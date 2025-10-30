@@ -5,7 +5,9 @@ using Application.Common;
 using Application.Dtos;
 using Application.Interfaces;
 using Domain.Entities;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 
@@ -16,17 +18,20 @@ public class AuthService : IAuthService
     private readonly UserManager<IdentityUser> _userManager;
     private readonly RoleManager<IdentityRole> _roleManager;
     private readonly IConfiguration _configuration;
+    private readonly IHttpContextAccessor _httpContextAccessor;
     private IDataContext _context;
 
     public AuthService(
         UserManager<IdentityUser> userManager,
         RoleManager<IdentityRole> roleManager,
         IConfiguration configuration,
+        IHttpContextAccessor httpContextAccessor,
         IDataContext context)
     {
         _userManager = userManager;
         _roleManager = roleManager;
         _configuration = configuration;
+        _httpContextAccessor = httpContextAccessor;
         _context = context;
     }
 
@@ -39,7 +44,8 @@ public class AuthService : IAuthService
         var claims = new List<Claim>
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id),
-            new Claim(ClaimTypes.Name, user.UserName!)
+            new Claim(ClaimTypes.Name, user.UserName!),
+            new Claim(ClaimTypes.GivenName, _context.Employees.Where(e => e.IdentityUserId == user.Id).FirstOrDefault().Name)
         };
 
         var roles = await _userManager.GetRolesAsync(user);
@@ -99,5 +105,19 @@ public class AuthService : IAuthService
 
         var token = await GenerateJwtToken(user);
         return new Response<TokenDto>(200, "Login successful", token);
+    }
+    
+    public Response<ProfileDto> Profile()
+    {
+        var userId = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
+        
+        return new Response<ProfileDto>(new ProfileDto()
+        {
+            UserId = userId,
+            EmployeeId = _context.Employees.Where(e => e.IdentityUserId == userId).FirstOrDefault().Id,
+            Name = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.GivenName)?.Value!,
+            Username = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.Name)?.Value!,
+            Role = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.Role)?.Value!,
+        });
     }
 }
