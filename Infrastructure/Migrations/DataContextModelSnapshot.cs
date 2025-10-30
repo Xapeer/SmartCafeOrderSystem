@@ -213,8 +213,14 @@ namespace Infrastructure.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("IsFree")
                         .HasColumnType("boolean");
+
+                    b.Property<int>("NumberOfSeats")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 

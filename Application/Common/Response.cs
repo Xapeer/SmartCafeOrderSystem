@@ -1,5 +1,7 @@
 ﻿namespace Application.Common;
 
+
+//TODO: Change class name to "GenericResponse" and create new one without generic and data
 public class Response<T>
 {
     public int StatusCode { get; set; }

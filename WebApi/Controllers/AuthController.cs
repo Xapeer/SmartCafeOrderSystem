@@ -25,4 +25,11 @@ public class AuthController(IAuthService service): Controller
         return StatusCode(response.StatusCode, response);
     }
     
+    [HttpGet("profile")]
+    public IActionResult Profile()
+    {
+        var response  = service.Profile();
+        return StatusCode(response.StatusCode, response);
+    }
+    
 }
