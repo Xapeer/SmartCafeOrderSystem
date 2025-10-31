@@ -38,6 +38,15 @@ public class MenuItemController(IMenuItemService service) : Controller
         var response = await service.GetMenuItemsByCategoryAsync(categoryId, pageNumber, pageSize);
         return StatusCode(response.StatusCode, response);
     }
+    
+    [HttpGet("get-all-menu-items")]
+    public async Task<IActionResult> GetAllMenuItems(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10)
+    {
+        var response = await service.GetAllMenuItemsAsync(pageNumber, pageSize);
+        return StatusCode(response.StatusCode, response);
+    }
 
     [HttpGet("search-menu-items")]
     public async Task<IActionResult> SearchMenuItems(

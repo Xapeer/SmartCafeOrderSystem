@@ -8,6 +8,15 @@ namespace WebApi.Controllers;
 [Route("api/[controller]")]
 public class CategoryController(ICategoryService service) : Controller
 {
+    [HttpGet("get-all-categories")]
+    public async Task<IActionResult> GetAllCategories(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10)
+    {
+        var response = await service.GetAllCategoriesAsync(pageNumber, pageSize);
+        return StatusCode(response.StatusCode, response);
+    }
+    
     [HttpPost("create-category")]
     public async Task<IActionResult> CreateCategory([FromBody] CreateCategoryDto dto)
     {

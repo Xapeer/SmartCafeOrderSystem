@@ -6,7 +6,7 @@ namespace Application.Interfaces;
 
 public interface ITableService
 {
-    Task<Response<List<GetTableDto>>> GetAllTables(TableFilter filter);
     Task<Response<GetTableDto>> CreateTableAsync(CreateTableDto dto);
     Task<Response<bool>> DeleteTableAsync(int tableId);
+    Task<PagedResponse<GetTableDto>> GetAllTablesAsync(TableFilter filter, int pageNumber = 1, int pageSize = 10);
 }

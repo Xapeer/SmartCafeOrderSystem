@@ -21,13 +21,20 @@ public class MenuItemService : IMenuItemService
     
     public async Task<Response<GetMenuItemDto>> CreateMenuItemAsync(CreateMenuItemDto dto)
     {
-        // Check if Category exists
-        var categoryExists = await _context.Categories
-            .AnyAsync(c => c.Id == dto.CategoryId);
-
-        if (!categoryExists)
+        if (dto.CategoryId == 0)
         {
-            return new Response<GetMenuItemDto>(400, "Invalid category ID");
+            dto.CategoryId = _context.Categories.Where(c => c.Name == "Uncategorized").FirstOrDefault().Id;
+        }
+        else
+        {
+            // Check if Category exists
+            var categoryExists = await _context.Categories
+                .AnyAsync(c => c.Id == dto.CategoryId);
+
+            if (!categoryExists)
+            {
+                return new Response<GetMenuItemDto>(400, "Invalid category ID");
+            }
         }
         
         // Check if MenuItem with this name exists
@@ -195,6 +202,38 @@ public class MenuItemService : IMenuItemService
         };
     }
 
+    public async Task<PagedResponse<GetMenuItemDto>> GetAllMenuItemsAsync(int pageNumber = 1, int pageSize = 10)
+    {
+        var query = _context.MenuItems
+            .Where(mi => mi.IsActive)
+            .AsQueryable();
+
+        var totalRecords = await query.CountAsync();
+
+        var menuItems = await query
+            .OrderBy(mi => mi.Id)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .Select(mi => new GetMenuItemDto
+            {
+                Id = mi.Id,
+                Name = mi.Name,
+                Description = mi.Description,
+                Price = mi.Price,
+                PrepTime = mi.PrepTime,
+                IsActive = mi.IsActive,
+                CategoryId = mi.CategoryId,
+                CategoryName = mi.Category.Name
+            })
+            .ToListAsync();
+
+        _logger.LogInformation("Fetched {Count} menu items", menuItems.Count);
+        return new PagedResponse<GetMenuItemDto>(menuItems, pageNumber, pageSize, totalRecords)
+        {
+            Message = "Menu items fetched successfully"
+        };
+    }
+
     public async Task<PagedResponse<GetMenuItemDto>> SearchMenuItemsByNameAsync(string name, int pageNumber = 1, int pageSize = 10)
     {
         if (string.IsNullOrWhiteSpace(name))
@@ -204,9 +243,9 @@ public class MenuItemService : IMenuItemService
                 Message = "Name cannot be empty"
             };
         }
-
+        
         var query = _context.MenuItems
-            .Where(mi => mi.Name.Contains(name) && mi.IsActive)
+            .Where(mi => mi.Name.ToLower().Contains(name.ToLower()) && mi.IsActive)
             .AsQueryable();
 
         var totalRecords = await query.CountAsync();

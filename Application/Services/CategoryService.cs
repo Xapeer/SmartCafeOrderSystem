@@ -18,6 +18,32 @@ public class CategoryService : ICategoryService
         _logger = logger;
     }
     
+    public async Task<PagedResponse<GetCategoryDto>> GetAllCategoriesAsync(int pageNumber = 1, int pageSize = 10)
+    {
+        var query = _context.Categories
+            .Where(c => c.IsActive)
+            .AsQueryable();
+
+        var totalRecords = await query.CountAsync();
+
+        var categories = await query
+            .OrderBy(c => c.Id)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .Select(c => new GetCategoryDto
+            {
+                Id = c.Id,
+                Name = c.Name,
+                IsActive = c.IsActive
+            })
+            .ToListAsync();
+
+        _logger.LogInformation("Fetched {Count} categories", categories.Count);
+        return new PagedResponse<GetCategoryDto>(categories, pageNumber, pageSize, totalRecords)
+        {
+            Message = "Categories fetched successfully"
+        };
+    }
     public async Task<Response<GetCategoryDto>> CreateCategoryAsync(CreateCategoryDto dto)
     {
         var existingCategory = await _context.Categories
