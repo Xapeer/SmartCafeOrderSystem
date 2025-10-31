@@ -29,6 +29,9 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<ITableService, TableService>();
+builder.Services.AddScoped<IMenuItemService, MenuItemService>();
+builder.Services.AddScoped<ICategoryService, CategoryService>();
+
 
 builder.Services.AddIdentityCore<IdentityUser>(config =>
     {
@@ -113,6 +116,7 @@ try
     await seeder.SeedRole();
     await seeder.SeedAdmin();
     await seeder.SeedKitchen();
+    await seeder.SeedDefaultCategory();
     
     logger.LogInformation("DB has been created successfully");
 }

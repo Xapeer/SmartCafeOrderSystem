@@ -20,7 +20,7 @@ public class OrderService : IOrderService
         _logger = logger;
     }
 
-    public async Task<Response<List<GetOrderDto>>> GetAllOrdersAsync(AllOrderFilter filter)
+    public async Task<PagedResponse<GetOrderDto>> GetAllOrdersAsync(AllOrderFilter filter, int pageNumber = 1, int pageSize = 10)
     {
         var query = _context.Orders.AsQueryable();
 
@@ -31,7 +31,7 @@ public class OrderService : IOrderService
         // Filter by status
         if (filter.Status != default)
             query = query.Where(o => o.Status == filter.Status);
-        
+
         // Filter by OrderId
         if (filter.OrderId > 0)
             query = query.Where(o => o.Id == filter.OrderId);
@@ -44,9 +44,14 @@ public class OrderService : IOrderService
         if (filter.WaiterId > 0)
             query = query.Where(o => o.WaiterId == filter.WaiterId);
 
+        var totalRecords = await query.CountAsync();
+
         try
         {
             var orders = await query
+                .OrderBy(o => o.Id)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
                 .Select(o => new GetOrderDto
                 {
                     Id = o.Id,
@@ -62,12 +67,18 @@ public class OrderService : IOrderService
                 .ToListAsync();
 
             _logger.LogInformation("Orders fetched successfully");
-            return new Response<List<GetOrderDto>>(200, "Orders fetched successfully", orders);
+            return new PagedResponse<GetOrderDto>(orders, pageNumber, pageSize, totalRecords)
+            {
+                Message = "Orders fetched successfully"
+            };
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error fetching orders");
-            return new Response<List<GetOrderDto>>(500, "An error occurred while fetching the orders");
+            return new PagedResponse<GetOrderDto>(new List<GetOrderDto>(), pageNumber, pageSize, 0)
+            {
+                Message = "An error occurred while fetching the orders"
+            };
         }
     }
     public async Task<Response<GetOrderWithItemsDto>> GetSingleOrderAsync(SingleOrderFilter filter)
@@ -235,7 +246,7 @@ public class OrderService : IOrderService
                 Status = newOrderItem.Status
             };
             
-            _logger.LogInformation("Created OrderItem {OrderItemId} for order {OrderId}", orderItemExists.Id, orderId);
+            _logger.LogInformation("Created OrderItem for order {OrderId}", orderId);
             return new Response<GetOrderItemDto>(200, "Created OrderItem", result);
         }
         catch (Exception ex)
@@ -348,6 +359,7 @@ public class OrderService : IOrderService
 
         orderTable.IsFree = true;
         orderExists.Status = OrderStatus.Paid;
+        orderExists.CompletedAt = DateTime.UtcNow;
         
         try
         {
@@ -400,6 +412,21 @@ public class OrderService : IOrderService
             _logger.LogError(ex,"Error cancelling Order");
             return new Response<bool>(500, "An error occurred while cancelling Order");
         }
+    }
+    public async Task<Response<decimal>> GetOrderTotalAsync(int orderId)
+    {
+        var order = await _context.Orders
+            .Include(o => o.OrderItems)
+            .FirstOrDefaultAsync(o => o.Id == orderId);
+
+        if (order == null)
+            return new Response<decimal>(404, "Order not found");
+
+        var total = order.OrderItems
+            .Where(oi => oi.Status != OrderItemStatus.Cancelled)
+            .Sum(oi => oi.PriceAtOrderTime * oi.Quantity);
+
+        return new Response<decimal>(200, "Total calculated successfully", total);
     }
 
 }

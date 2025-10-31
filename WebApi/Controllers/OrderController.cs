@@ -13,9 +13,12 @@ namespace WebApi.Controllers;
 public class OrderController(IOrderService service) : Controller
 {
     [HttpGet("get-all-orders")]
-    public async Task<IActionResult> GetAllOrders([FromQuery] AllOrderFilter filter)
+    public async Task<IActionResult> GetAllOrders(
+        [FromQuery] AllOrderFilter filter,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10)
     {
-        var response = await service.GetAllOrdersAsync(filter);
+        var response = await service.GetAllOrdersAsync(filter, pageNumber, pageSize);
         return StatusCode(response.StatusCode, response);
     }
 
@@ -23,6 +26,13 @@ public class OrderController(IOrderService service) : Controller
     public async Task<IActionResult> GetSingleOrder([FromQuery] SingleOrderFilter filter)
     {
         var response = await service.GetSingleOrderAsync(filter);
+        return StatusCode(response.StatusCode, response);
+    }
+    
+    [HttpGet("get-order-total")]
+    public async Task<IActionResult> GetOrderTotal(int orderId)
+    {
+        var response = await service.GetOrderTotalAsync(orderId);
         return StatusCode(response.StatusCode, response);
     }
     

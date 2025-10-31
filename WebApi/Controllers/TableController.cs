@@ -14,9 +14,12 @@ public class TableController(ITableService service) : Controller
 {
 
     [HttpGet("get-all-tables")]
-    public async Task<IActionResult> GetAllTables([FromQuery] TableFilter filter)
+    public async Task<IActionResult> GetAllTables(
+        [FromQuery] TableFilter filter,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10)
     {
-        var response = await service.GetAllTables(filter);
+        var response = await service.GetAllTablesAsync(filter, pageNumber, pageSize);
         return StatusCode(response.StatusCode, response);
     }
 
@@ -31,6 +34,13 @@ public class TableController(ITableService service) : Controller
     public async Task<IActionResult> DeleteTable(int tableId)
     {
         var response = await service.DeleteTableAsync(tableId);
+        return StatusCode(response.StatusCode, response);
+    }
+    
+    [HttpPut("activate-table")]
+    public async Task<IActionResult> ActivateTable(int tableId)
+    {
+        var response = await service.ActivateTableAsync(tableId);
         return StatusCode(response.StatusCode, response);
     }
 }

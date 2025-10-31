@@ -45,11 +45,20 @@ public class AuthService : IAuthService
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id),
             new Claim(ClaimTypes.Name, user.UserName!),
-            new Claim(ClaimTypes.GivenName, _context.Employees.Where(e => e.IdentityUserId == user.Id).FirstOrDefault().Name)
         };
 
         var roles = await _userManager.GetRolesAsync(user);
         claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
+        
+        var name = _context.Employees
+            .Where(e => e.IdentityUserId == user.Id)
+            .Select(e => e.Name)
+            .FirstOrDefault();
+
+        if (name != null)
+        {
+            claims.Add(new Claim(ClaimTypes.GivenName, name));
+        }
 
         var expireHours = double.Parse(_configuration["Jwt:ExpireHours"] ?? "1");
         var expiresIn = DateTime.UtcNow.AddHours(expireHours);
@@ -109,15 +118,18 @@ public class AuthService : IAuthService
     
     public Response<ProfileDto> Profile()
     {
-        var userId = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
+        var user = _httpContextAccessor.HttpContext?.User;
+        var userId = user?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         
+        var employee = _context.Employees.FirstOrDefault(e => e.IdentityUserId == userId);
+
         return new Response<ProfileDto>(new ProfileDto()
         {
             UserId = userId,
-            EmployeeId = _context.Employees.Where(e => e.IdentityUserId == userId).FirstOrDefault().Id,
-            Name = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.GivenName)?.Value!,
-            Username = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.Name)?.Value!,
-            Role = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.Role)?.Value!,
+            EmployeeId = employee?.Id,
+            Name = user?.FindFirst(ClaimTypes.GivenName)?.Value,
+            Username = user?.FindFirst(ClaimTypes.Name)?.Value,
+            Role = user?.FindFirst(ClaimTypes.Role)?.Value,
         });
     }
 }

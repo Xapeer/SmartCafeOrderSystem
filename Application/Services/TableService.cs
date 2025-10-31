@@ -20,7 +20,7 @@ public class TableService : ITableService
         _logger = logger;
     }
 
-    public async Task<Response<List<GetTableDto>>> GetAllTables(TableFilter filter)
+    public async Task<PagedResponse<GetTableDto>> GetAllTablesAsync(TableFilter filter, int pageNumber = 1, int pageSize = 10)
     {
         // Check filtration first
         var query = _context.Tables.AsQueryable();
@@ -30,24 +30,36 @@ public class TableService : ITableService
         if (filter.OnlyFree)
             query = query.Where(table => table.IsFree);
 
+        var totalRecords = await query.CountAsync();
+
         try
         {
-            var tables = await query.Select(table => new GetTableDto()
+            var tables = await query
+                .OrderBy(t => t.Id)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .Select(table => new GetTableDto()
+                {
+                    Id = table.Id,
+                    NumberOfSeats = table.NumberOfSeats,
+                    IsActive = table.IsActive,
+                    IsFree = table.IsFree
+                }).ToListAsync();
+
+            _logger.LogInformation("Fetched {Count} tables with filters: OnlyActive={OnlyActive}, OnlyFree={OnlyFree}",
+                tables.Count, filter.OnlyActive, filter.OnlyFree);
+            return new PagedResponse<GetTableDto>(tables, pageNumber, pageSize, totalRecords)
             {
-                Id = table.Id,
-                NumberOfSeats = table.NumberOfSeats,
-                IsActive = table.IsActive,
-                IsFree = table.IsFree
-            }).ToListAsync();
-        
-            _logger.LogInformation("Fetched tables with filters: OnlyActive={OnlyActive}, OnlyFree={OnlyFree}", 
-                filter.OnlyActive, filter.OnlyFree);
-            return new Response<List<GetTableDto>>(200, "Tables fetched successfully", tables);
+                Message = "Tables fetched successfully"
+            };
         }
         catch (Exception ex)
         {
-            _logger.LogInformation("Error fetching tables");
-            return new Response<List<GetTableDto>>(500, "An error occurred while fetching the tables");
+            _logger.LogError(ex, "Error fetching tables");
+            return new PagedResponse<GetTableDto>(new List<GetTableDto>(), pageNumber, pageSize, 0)
+            {
+                Message = "An error occurred while fetching the tables"
+            };
         }
     }
 
@@ -102,6 +114,31 @@ public class TableService : ITableService
         {
             _logger.LogError(ex, "Error deleting table");
             return new Response<bool>(500, "An error occurred while deleting the table");
+        }
+    }
+    
+    public async Task<Response<bool>> ActivateTableAsync(int tableId)
+    {
+        // Check if table exists
+        var tableExists = await _context.Tables
+            .FirstOrDefaultAsync(t => t.Id == tableId);
+
+        if (tableExists == null)
+            return new Response<bool>(400, "Invalid table ID");
+
+        tableExists.IsActive = true;
+        
+        try
+        {
+            await _context.SaveChangesAsync();
+            
+            _logger.LogInformation("Activated table {TableId}", tableId);
+            return new Response<bool>(200, "Table Activated successfully");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error activating table");
+            return new Response<bool>(500, "An error occurred while activating the table");
         }
     }
 }

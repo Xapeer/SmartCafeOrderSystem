@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Domain.Entities;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure;
 
@@ -76,6 +78,19 @@ public class Seeder
         {
             var errors = string.Join(", ", result.Errors.Select(e => e.Description));
             Console.WriteLine($"Couldn't create kitchen: {errors}");
+        }
+    }
+
+    public async Task SeedDefaultCategory()
+    {
+        var uncategorizedCategory = await _context.Categories
+            .FirstOrDefaultAsync(c => c.Name == "Uncategorized");
+
+        if (uncategorizedCategory == null)
+        {
+            uncategorizedCategory = new Category { Name = "Uncategorized" };
+            _context.Categories.Add(uncategorizedCategory);
+            await _context.SaveChangesAsync();
         }
     }
 }
