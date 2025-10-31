@@ -36,4 +36,11 @@ public class TableController(ITableService service) : Controller
         var response = await service.DeleteTableAsync(tableId);
         return StatusCode(response.StatusCode, response);
     }
+    
+    [HttpPut("activate-table")]
+    public async Task<IActionResult> ActivateTable(int tableId)
+    {
+        var response = await service.ActivateTableAsync(tableId);
+        return StatusCode(response.StatusCode, response);
+    }
 }

@@ -35,6 +35,7 @@ public class TableService : ITableService
         try
         {
             var tables = await query
+                .OrderBy(t => t.Id)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .Select(table => new GetTableDto()
@@ -113,6 +114,31 @@ public class TableService : ITableService
         {
             _logger.LogError(ex, "Error deleting table");
             return new Response<bool>(500, "An error occurred while deleting the table");
+        }
+    }
+    
+    public async Task<Response<bool>> ActivateTableAsync(int tableId)
+    {
+        // Check if table exists
+        var tableExists = await _context.Tables
+            .FirstOrDefaultAsync(t => t.Id == tableId);
+
+        if (tableExists == null)
+            return new Response<bool>(400, "Invalid table ID");
+
+        tableExists.IsActive = true;
+        
+        try
+        {
+            await _context.SaveChangesAsync();
+            
+            _logger.LogInformation("Activated table {TableId}", tableId);
+            return new Response<bool>(200, "Table Activated successfully");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error activating table");
+            return new Response<bool>(500, "An error occurred while activating the table");
         }
     }
 }

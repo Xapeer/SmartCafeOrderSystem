@@ -18,11 +18,12 @@ public class CategoryService : ICategoryService
         _logger = logger;
     }
     
-    public async Task<PagedResponse<GetCategoryDto>> GetAllCategoriesAsync(int pageNumber = 1, int pageSize = 10)
+    public async Task<PagedResponse<GetCategoryDto>> GetAllCategoriesAsync(bool onlyActive = true, int pageNumber = 1, int pageSize = 10)
     {
-        var query = _context.Categories
-            .Where(c => c.IsActive)
-            .AsQueryable();
+        var query = _context.Categories.AsQueryable();
+        
+        if(onlyActive)
+            query = query.Where(c => c.IsActive);
 
         var totalRecords = await query.CountAsync();
 
@@ -144,6 +145,31 @@ public class CategoryService : ICategoryService
         {
             _logger.LogError(ex, "Error deleting category {CategoryId}", id);
             return new Response<bool>(500, "An error occurred while deleting the category", false);
+        }
+    }
+    
+    public async Task<Response<bool>> ActivateCategoryAsync(int id)
+    {
+        var category = await _context.Categories
+            .FirstOrDefaultAsync(c => c.Id == id);
+
+        if (category == null)
+        {
+            return new Response<bool>(404, "Category not found", false);
+        }
+
+        category.IsActive = true;
+
+        try
+        {
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("Category {CategoryId} marked as active", id);
+            return new Response<bool>(200, "Category activated successfully (marked as active)", true);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error activating category {CategoryId}", id);
+            return new Response<bool>(500, "An error occurred while activating the category", false);
         }
     }
 

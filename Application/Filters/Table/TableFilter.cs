@@ -2,6 +2,6 @@
 
 public class TableFilter
 {
-    public bool OnlyActive { get; set; }
-    public bool OnlyFree { get; set; }
+    public bool OnlyActive { get; set; } = true;
+    public bool OnlyFree { get; set; } = true;
 }

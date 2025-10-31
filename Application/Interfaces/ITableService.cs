@@ -9,4 +9,5 @@ public interface ITableService
     Task<Response<GetTableDto>> CreateTableAsync(CreateTableDto dto);
     Task<Response<bool>> DeleteTableAsync(int tableId);
     Task<PagedResponse<GetTableDto>> GetAllTablesAsync(TableFilter filter, int pageNumber = 1, int pageSize = 10);
+    Task<Response<bool>> ActivateTableAsync(int tableId);
 }

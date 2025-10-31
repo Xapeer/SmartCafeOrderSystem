@@ -246,7 +246,7 @@ public class OrderService : IOrderService
                 Status = newOrderItem.Status
             };
             
-            _logger.LogInformation("Created OrderItem {OrderItemId} for order {OrderId}", orderItemExists.Id, orderId);
+            _logger.LogInformation("Created OrderItem for order {OrderId}", orderId);
             return new Response<GetOrderItemDto>(200, "Created OrderItem", result);
         }
         catch (Exception ex)
@@ -359,6 +359,7 @@ public class OrderService : IOrderService
 
         orderTable.IsFree = true;
         orderExists.Status = OrderStatus.Paid;
+        orderExists.CompletedAt = DateTime.UtcNow;
         
         try
         {
@@ -411,6 +412,21 @@ public class OrderService : IOrderService
             _logger.LogError(ex,"Error cancelling Order");
             return new Response<bool>(500, "An error occurred while cancelling Order");
         }
+    }
+    public async Task<Response<decimal>> GetOrderTotalAsync(int orderId)
+    {
+        var order = await _context.Orders
+            .Include(o => o.OrderItems)
+            .FirstOrDefaultAsync(o => o.Id == orderId);
+
+        if (order == null)
+            return new Response<decimal>(404, "Order not found");
+
+        var total = order.OrderItems
+            .Where(oi => oi.Status != OrderItemStatus.Cancelled)
+            .Sum(oi => oi.PriceAtOrderTime * oi.Quantity);
+
+        return new Response<decimal>(200, "Total calculated successfully", total);
     }
 
 }

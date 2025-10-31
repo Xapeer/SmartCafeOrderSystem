@@ -8,6 +8,16 @@ namespace WebApi.Controllers;
 [Route("api/[controller]")]
 public class MenuItemController(IMenuItemService service) : Controller
 {
+    [HttpGet("get-all-menu-items")]
+    public async Task<IActionResult> GetAllMenuItems(
+        [FromQuery] bool onlyActive = true,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10)
+    {
+        var response = await service.GetAllMenuItemsAsync(onlyActive, pageNumber, pageSize);
+        return StatusCode(response.StatusCode, response);
+    }
+    
     [HttpPost("create-menu-item")]
     public async Task<IActionResult> CreateMenuItem([FromBody] CreateMenuItemDto dto)
     {
@@ -28,6 +38,13 @@ public class MenuItemController(IMenuItemService service) : Controller
         var response = await service.DeleteMenuItemAsync(id);
         return StatusCode(response.StatusCode, response);
     }
+    
+    [HttpPut("activate-menu-item")]
+    public async Task<IActionResult> ActivateMenuItem(int id)
+    {
+        var response = await service.ActivateMenuItem(id);
+        return StatusCode(response.StatusCode, response);
+    }
 
     [HttpGet("get-menu-items-by-category")]
     public async Task<IActionResult> GetMenuItemsByCategory(
@@ -36,15 +53,6 @@ public class MenuItemController(IMenuItemService service) : Controller
         [FromQuery] int pageSize = 10)
     {
         var response = await service.GetMenuItemsByCategoryAsync(categoryId, pageNumber, pageSize);
-        return StatusCode(response.StatusCode, response);
-    }
-    
-    [HttpGet("get-all-menu-items")]
-    public async Task<IActionResult> GetAllMenuItems(
-        [FromQuery] int pageNumber = 1,
-        [FromQuery] int pageSize = 10)
-    {
-        var response = await service.GetAllMenuItemsAsync(pageNumber, pageSize);
         return StatusCode(response.StatusCode, response);
     }
 

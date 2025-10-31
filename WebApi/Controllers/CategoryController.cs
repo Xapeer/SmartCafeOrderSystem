@@ -10,10 +10,11 @@ public class CategoryController(ICategoryService service) : Controller
 {
     [HttpGet("get-all-categories")]
     public async Task<IActionResult> GetAllCategories(
+        [FromQuery] bool onlyActive = true,
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10)
     {
-        var response = await service.GetAllCategoriesAsync(pageNumber, pageSize);
+        var response = await service.GetAllCategoriesAsync(onlyActive, pageNumber, pageSize);
         return StatusCode(response.StatusCode, response);
     }
     
@@ -35,6 +36,13 @@ public class CategoryController(ICategoryService service) : Controller
     public async Task<IActionResult> DeleteCategory(int id)
     {
         var response = await service.DeleteCategoryAsync(id);
+        return StatusCode(response.StatusCode, response);
+    }
+    
+    [HttpPut("activate-category")]
+    public async Task<IActionResult> ActivateCategory(int id)
+    {
+        var response = await service.ActivateCategoryAsync(id);
         return StatusCode(response.StatusCode, response);
     }
 

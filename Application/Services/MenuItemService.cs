@@ -158,6 +158,31 @@ public class MenuItemService : IMenuItemService
             return new Response<bool>(500, "An error occurred while deleting the menu item", false);
         }
     }
+    
+    public async Task<Response<bool>> ActivateMenuItem(int id)
+    {
+        var menuItem = await _context.MenuItems
+            .FirstOrDefaultAsync(mi => mi.Id == id);
+
+        if (menuItem == null)
+        {
+            return new Response<bool>(404, "Menu item not found", false);
+        }
+
+        menuItem.IsActive = true;
+
+        try
+        {
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("Menu item {MenuItemId} marked as active", id);
+            return new Response<bool>(200, "Menu item activated successfully (marked as active)", true);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error activating menu item {MenuItemId}", id);
+            return new Response<bool>(500, "An error occurred while activating the menu item", false);
+        }
+    }
 
     public async Task<PagedResponse<GetMenuItemDto>> GetMenuItemsByCategoryAsync(int categoryId, int pageNumber = 1, int pageSize = 10)
     {
@@ -202,11 +227,12 @@ public class MenuItemService : IMenuItemService
         };
     }
 
-    public async Task<PagedResponse<GetMenuItemDto>> GetAllMenuItemsAsync(int pageNumber = 1, int pageSize = 10)
+    public async Task<PagedResponse<GetMenuItemDto>> GetAllMenuItemsAsync(bool onlyActive = true, int pageNumber = 1, int pageSize = 10)
     {
-        var query = _context.MenuItems
-            .Where(mi => mi.IsActive)
-            .AsQueryable();
+        var query = _context.MenuItems.AsQueryable();
+        
+        if(onlyActive)
+            query = query.Where(mi => mi.IsActive);
 
         var totalRecords = await query.CountAsync();
 

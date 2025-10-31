@@ -29,6 +29,13 @@ public class OrderController(IOrderService service) : Controller
         return StatusCode(response.StatusCode, response);
     }
     
+    [HttpGet("get-order-total")]
+    public async Task<IActionResult> GetOrderTotal(int orderId)
+    {
+        var response = await service.GetOrderTotalAsync(orderId);
+        return StatusCode(response.StatusCode, response);
+    }
+    
     [HttpPost("create-order")]
     public async Task<IActionResult> CreateOrder([FromBody] CreateOrderDto dto)
     {
