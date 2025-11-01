@@ -1,0 +1,45 @@
+services:
+  webapi:
+    image: smart_cafe
+    container_name: smart_cafe
+    platform: linux/amd64
+    restart: unless-stopped
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    ports:
+      - "8082:8080"
+    volumes:
+      - uploads:/app/wwwroot/uploads
+      - logs:/app/logs
+    depends_on:
+      - db
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__Default=Host=smart_cafe_db;Port=5432;Database=bank_rbac_db;Username=postgres;Password=daler123
+    networks:
+      - postgres-network
+
+  db:
+    image: postgres:17-alpine
+    container_name: smart_cafe_db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=daler123
+    ports:
+      - "5482:5432"
+    volumes:
+      - postgresql-data:/var/lib/postgresql/data
+    networks:
+      - postgres-network
+
+networks:
+  postgres-network:
+    driver: bridge
+
+volumes:
+  postgresql-data:
+  uploads:
+  logs:
