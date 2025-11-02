@@ -195,6 +195,10 @@ public class OrderService : IOrderService
         if (menuItemExists == null)
             return new Response<GetOrderItemDto>(400, "Invalid MenuItem ID");
         
+        // Check if Order is "Created" or "Confirmed"
+        if (orderExists.Status != OrderStatus.Created && orderExists.Status != OrderStatus.Confirmed)
+            return new Response<GetOrderItemDto>(400, "Cannot add OrderItem! Order status must be 'Created' or 'Confirmed'");
+        
         // Check if MenuItem is Active
         if (!menuItemExists.IsActive)
             return new Response<GetOrderItemDto>(400, "MenuItem is not active");
