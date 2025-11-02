@@ -93,7 +93,8 @@ public class OrderService : IOrderService
 
         // Filter by TableId
         if (filter.TableId > 0)
-            query = query.Where(o => o.TableId == filter.TableId);
+            query = query
+                .Where(o => o.TableId == filter.TableId && (o.Status == OrderStatus.Confirmed || o.Status == OrderStatus.Created));
 
         // Filter by WaiterId
         if (filter.WaiterId > 0)
@@ -102,6 +103,7 @@ public class OrderService : IOrderService
         try
         {
             var order = await query
+                .OrderByDescending(o => o.CreatedAt)
                 .Select(o => new GetOrderWithItemsDto()
                 {
                     Id = o.Id,
