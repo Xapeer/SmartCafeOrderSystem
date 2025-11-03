@@ -58,9 +58,9 @@ public class OrderController(IOrderService service) : Controller
     }
     
     [HttpPut("serve-order-item")]
-    public async Task<IActionResult> ServeOrderItem(int orderId)
+    public async Task<IActionResult> ServeOrderItem(int orderItemId)
     {
-        var response = await service.ServeOrderItemAsync(orderId);
+        var response = await service.ServeOrderItemAsync(orderItemId);
         return StatusCode(response.StatusCode, response);
     }
 
