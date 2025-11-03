@@ -9,6 +9,7 @@ public class GetOrderItemDto
     public int MenuItemId { get; set; }
     public int Quantity { get; set; }
     public decimal PriceAtOrderTime { get; set; }
+    public string MenuItemName { get; set; }
     public string Notes { get; set; }
     public OrderItemStatus Status { get; set; }
     public DateTime? StartedAt { get; set; }

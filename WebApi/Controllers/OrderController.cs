@@ -56,22 +56,29 @@ public class OrderController(IOrderService service) : Controller
         var response = await service.RemoveOrderItemAsync(orderId, orderItemId);
         return StatusCode(response.StatusCode, response);
     }
+    
+    [HttpPut("serve-order-item")]
+    public async Task<IActionResult> ServeOrderItem(int orderId)
+    {
+        var response = await service.ServeOrderItemAsync(orderId);
+        return StatusCode(response.StatusCode, response);
+    }
 
-    [HttpPost("confirm-order")]
+    [HttpPut("confirm-order")]
     public async Task<IActionResult> ConfirmOrder(int orderId)
     {
         var response = await service.ConfirmOrderAsync(orderId);
         return StatusCode(response.StatusCode, response);
     }
     
-    [HttpPost("pay-for-order")]
+    [HttpPut("pay-for-order")]
     public async Task<IActionResult> PayForOrder(int orderId)
     {
         var response = await service.PayForOrderAsync(orderId);
         return StatusCode(response.StatusCode, response);
     }
 
-    [HttpPost("cancel-order")]
+    [HttpPut("cancel-order")]
     public async Task<IActionResult> CancelOrder(int orderId)
     {
         var response = await service.CancelOrderAsync(orderId);

@@ -53,7 +53,7 @@ public class CategoryController(ICategoryService service) : Controller
         return StatusCode(response.StatusCode, response);
     }
 
-    [HttpPost("remove-menu-item-from-category")]
+    [HttpDelete("remove-menu-item-from-category")]
     public async Task<IActionResult> RemoveMenuItemFromCategory(int menuItemId)
     {
         var response = await service.RemoveMenuItemFromCategoryAsync(menuItemId);
