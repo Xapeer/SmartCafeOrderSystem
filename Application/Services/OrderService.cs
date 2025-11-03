@@ -31,7 +31,7 @@ public class OrderService : IOrderService
             query = query.Where(o => o.CreatedAt >= filter.FromTime && o.CreatedAt <= filter.ToTime);
 
         // Filter by status
-        if (filter.Status != default)
+        if (filter.Status.HasValue)
             query = query.Where(o => o.Status == filter.Status);
 
         // Filter by OrderId
@@ -159,6 +159,7 @@ public class OrderService : IOrderService
         {
             TableId = dto.TableId,
             WaiterId = dto.WaiterId,
+            Status = OrderStatus.Created
         };
 
         try
