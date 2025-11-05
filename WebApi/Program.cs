@@ -35,6 +35,7 @@ builder.Services.AddScoped<ITableService, TableService>();
 builder.Services.AddScoped<IMenuItemService, MenuItemService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IKitchenQueueService, KitchenQueueService>();
+builder.Services.AddScoped<IWaiterService, WaiterService>();
 
 builder.Services.AddIdentityCore<IdentityUser>(config =>
     {
