@@ -11,13 +11,15 @@ namespace Application.Services;
 
 public class OrderService : IOrderService
 {
-    private IDataContext _context;
+    private readonly IDataContext _context;
     private readonly ILogger<OrderService> _logger;
+    private readonly IKitchenQueueService _kitchenQueueService;
 
-    public OrderService(IDataContext context, ILogger<OrderService> logger)
+    public OrderService(IDataContext context, ILogger<OrderService> logger, IKitchenQueueService kitchenQueueService)
     {
         _context = context;
         _logger = logger;
+        _kitchenQueueService = kitchenQueueService;
     }
 
     public async Task<PagedResponse<GetOrderDto>> GetAllOrdersAsync(AllOrderFilter filter, int pageNumber = 1, int pageSize = 10)
@@ -29,7 +31,7 @@ public class OrderService : IOrderService
             query = query.Where(o => o.CreatedAt >= filter.FromTime && o.CreatedAt <= filter.ToTime);
 
         // Filter by status
-        if (filter.Status != default)
+        if (filter.Status.HasValue)
             query = query.Where(o => o.Status == filter.Status);
 
         // Filter by OrderId
@@ -123,6 +125,7 @@ public class OrderService : IOrderService
                         MenuItemId = oi.MenuItemId,
                         Quantity = oi.Quantity,
                         PriceAtOrderTime = oi.PriceAtOrderTime,
+                        MenuItemName = oi.MenuItem.Name,
                         Status = oi.Status,
                         StartedAt = oi.StartedAt,
                         CompletedAt = oi.CompletedAt,
@@ -156,6 +159,7 @@ public class OrderService : IOrderService
         {
             TableId = dto.TableId,
             WaiterId = dto.WaiterId,
+            Status = OrderStatus.Created
         };
 
         try
@@ -218,6 +222,7 @@ public class OrderService : IOrderService
                     Id = orderItemExists.Id,
                     OrderId = orderItemExists.OrderId,
                     MenuItemId = orderItemExists.MenuItemId,
+                    MenuItemName = orderItemExists.MenuItem.Name,
                     Quantity = orderItemExists.Quantity,
                     PriceAtOrderTime = orderItemExists.PriceAtOrderTime,
                     Status = orderItemExists.Status
@@ -247,6 +252,7 @@ public class OrderService : IOrderService
                 Id = newOrderItem.Id,
                 OrderId = newOrderItem.OrderId,
                 MenuItemId = newOrderItem.MenuItemId,
+                MenuItemName = newOrderItem.MenuItem.Name,
                 Quantity = newOrderItem.Quantity,
                 PriceAtOrderTime = newOrderItem.PriceAtOrderTime,
                 Status = newOrderItem.Status
@@ -298,6 +304,34 @@ public class OrderService : IOrderService
             return new Response<bool>(500, "An error occurred while removing OrderItem");
         }
     }
+    public async Task<Response<bool>> ServeOrderItemAsync(int orderItemId)
+    {
+        // Check if OrderItem exist
+        var orderItemExists = await _context.OrderItems
+            .FirstOrDefaultAsync(t => t.Id == orderItemId);
+        
+        if (orderItemExists == null)
+            return new Response<bool>(400, "Invalid OrderItem ID");
+        
+        // Check if OrderItem has status = "Ready"
+        if (orderItemExists.Status != OrderItemStatus.Ready)
+            return new Response<bool>(400, "OrderItem is not Ready");
+        
+        orderItemExists.Status = OrderItemStatus.Served;
+        
+        try
+        {
+            await _context.SaveChangesAsync();
+            
+            _logger.LogInformation("Served OrderItem {OrderItemId}", orderItemId);
+            return new Response<bool>(200, "OrderItem Served");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,"Error serving OrderItem");
+            return new Response<bool>(500, "An error occurred while serving OrderItem");
+        }
+    }
     public async Task<Response<bool>> ConfirmOrderAsync(int orderId)
     {
         // Check if Order exists
@@ -313,21 +347,27 @@ public class OrderService : IOrderService
 
         // Load OrderItems of Order
         var orderItems = await _context.OrderItems
+            .Include(oi => oi.MenuItem)
             .Where(oi => oi.OrderId == orderExists.Id).ToListAsync();
         
         // Change Order status to "Confirmed"
         orderExists.Status = OrderStatus.Confirmed;
         
         // For each OrderItem in Order change status to "Started" and send to KitchenQueue
-        foreach (OrderItem orderItem in orderItems)
+        foreach (OrderItem orderItem in orderItems.Where(oi => oi.Status == OrderItemStatus.New))
         {
-            if (orderItem.Status == OrderItemStatus.New)
+            if (orderItem.MenuItem.PrepTime > new TimeSpan(0,0,0))
             {
                 orderItem.Status = OrderItemStatus.Started;
                 orderItem.StartedAt = DateTime.UtcNow;
+                await _kitchenQueueService.EnqueueOrderItemAsync(orderItem.Id);
             }
-            
-            //TODO: send each OrderItem to KitchenQueue
+            else
+            {
+                orderItem.Status = OrderItemStatus.Ready;
+                orderItem.StartedAt = DateTime.UtcNow;
+                orderItem.CompletedAt = DateTime.UtcNow;
+            }
         }
 
         try
