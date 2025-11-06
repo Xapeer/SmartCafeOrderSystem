@@ -147,6 +147,9 @@ public class OrderService : IOrderService
         // Check if table ID correct and table is free
         var tableExists = await _context.Tables
             .FirstOrDefaultAsync(t => t.Id == dto.TableId);
+        
+        var currentDiscount = await _context.Discounts
+            .FirstOrDefaultAsync(d => d.EndTime > DateTime.UtcNow && d.StartTime < DateTime.UtcNow);
 
         if (tableExists == null)
             return new Response<GetOrderDto>(400, "Invalid table ID");
@@ -161,6 +164,11 @@ public class OrderService : IOrderService
             WaiterId = dto.WaiterId,
             Status = OrderStatus.Created
         };
+
+        if (currentDiscount != null)
+        {
+            order.Discount = currentDiscount;
+        }
 
         try
         {
@@ -387,6 +395,8 @@ public class OrderService : IOrderService
     {
         // Check if Order exists
         var orderExists = await _context.Orders
+            .Include(o => o.OrderItems)
+            .Include(o => o.Discount)
             .FirstOrDefaultAsync(o => o.Id == orderId);
         
         if (orderExists == null)
@@ -398,11 +408,28 @@ public class OrderService : IOrderService
 
         var orderTable = await _context.Tables
             .FirstOrDefaultAsync(t => t.Id == orderExists.TableId);
-        
-        //...
-        //Some payment methods calls
-        //...
 
+        var containsNotServedItems = orderExists.OrderItems
+            .Any(oi => oi.Status == OrderItemStatus.Started);
+        if (containsNotServedItems)
+            return new Response<bool>(400, "Some OrderItems are not served");
+        
+        foreach (var orderItem in orderExists.OrderItems)
+        {
+            if (orderItem.Status == OrderItemStatus.New)
+                orderItem.Status = OrderItemStatus.Cancelled;
+            if (orderItem.Status == OrderItemStatus.Ready)
+                orderItem.Status = OrderItemStatus.Served;
+        }
+
+        var total = orderExists.OrderItems
+            .Where(oi => oi.Status == OrderItemStatus.Served)
+            .Sum(oi => oi.PriceAtOrderTime * oi.Quantity);
+
+        if (orderExists.Discount != null)
+            orderExists.DiscountAmount = total * orderExists.Discount.DiscountPercent / 100;
+
+        orderExists.TotalAmount = total - orderExists.DiscountAmount;
         orderTable.IsFree = true;
         orderExists.Status = OrderStatus.Paid;
         orderExists.CompletedAt = DateTime.UtcNow;
