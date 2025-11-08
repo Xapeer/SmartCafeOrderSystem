@@ -32,4 +32,11 @@ public class AuthController(IAuthService service): Controller
         return StatusCode(response.StatusCode, response);
     }
     
+    [HttpPost("get-role-from-token")]
+    public async Task<IActionResult> GetRoleFromToken([FromBody] string token)
+    {
+        var response = await service.GetRoleFromTokenAsync(token);
+        return StatusCode(response.StatusCode, response);
+    }
+    
 }

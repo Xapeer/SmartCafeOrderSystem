@@ -116,6 +116,7 @@ public class OrderService : IOrderService
                     Status = o.Status,
                     TableId = o.TableId,
                     WaiterId = o.WaiterId,
+                    DiscountId = o.DiscountId,
                     OrderItems = o.OrderItems
                         .Where(oi => oi.Status != OrderItemStatus.Cancelled)
                         .Select(oi => new GetOrderItemDto
@@ -147,6 +148,9 @@ public class OrderService : IOrderService
         // Check if table ID correct and table is free
         var tableExists = await _context.Tables
             .FirstOrDefaultAsync(t => t.Id == dto.TableId);
+        
+        var currentDiscount = await _context.Discounts
+            .FirstOrDefaultAsync(d => d.EndTime > DateTime.UtcNow && d.StartTime < DateTime.UtcNow);
 
         if (tableExists == null)
             return new Response<GetOrderDto>(400, "Invalid table ID");
@@ -162,6 +166,11 @@ public class OrderService : IOrderService
             Status = OrderStatus.Created
         };
 
+        if (currentDiscount != null)
+        {
+            order.DiscountId = currentDiscount.Id;
+        }
+
         try
         {
             _context.Orders.Add(order);
@@ -174,7 +183,8 @@ public class OrderService : IOrderService
                 CreatedAt = order.CreatedAt,
                 WaiterId = order.WaiterId,
                 TableId = order.TableId,
-                Status = order.Status
+                Status = order.Status,
+                DiscountId = order.DiscountId
             };
             _logger.LogInformation("Created new order {OrderId} for table {TableId}", order.Id, dto.TableId);
             return new Response<GetOrderDto>(200, "Order created successfully", result);
@@ -387,6 +397,8 @@ public class OrderService : IOrderService
     {
         // Check if Order exists
         var orderExists = await _context.Orders
+            .Include(o => o.OrderItems)
+            .Include(o => o.Discount)
             .FirstOrDefaultAsync(o => o.Id == orderId);
         
         if (orderExists == null)
@@ -398,11 +410,29 @@ public class OrderService : IOrderService
 
         var orderTable = await _context.Tables
             .FirstOrDefaultAsync(t => t.Id == orderExists.TableId);
-        
-        //...
-        //Some payment methods calls
-        //...
 
+        var containsNotServedItems = orderExists.OrderItems
+            .Any(oi => oi.Status == OrderItemStatus.Started);
+        if (containsNotServedItems)
+            return new Response<bool>(400, "Some OrderItems are not served");
+        
+        foreach (var orderItem in orderExists.OrderItems)
+        {
+            if (orderItem.Status == OrderItemStatus.New)
+                orderItem.Status = OrderItemStatus.Cancelled;
+                
+            if (orderItem.Status == OrderItemStatus.Ready)
+                orderItem.Status = OrderItemStatus.Served;
+        }
+
+        var total = orderExists.OrderItems
+            .Where(oi => oi.Status == OrderItemStatus.Served)
+            .Sum(oi => oi.PriceAtOrderTime * oi.Quantity);
+
+        if (orderExists.Discount != null)
+            orderExists.DiscountAmount = total * orderExists.Discount.DiscountPercent / 100;
+
+        orderExists.TotalAmount = total - orderExists.DiscountAmount;
         orderTable.IsFree = true;
         orderExists.Status = OrderStatus.Paid;
         orderExists.CompletedAt = DateTime.UtcNow;

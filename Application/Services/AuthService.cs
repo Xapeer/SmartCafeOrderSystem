@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Application.Services;
@@ -19,20 +20,23 @@ public class AuthService : IAuthService
     private readonly RoleManager<IdentityRole> _roleManager;
     private readonly IConfiguration _configuration;
     private readonly IHttpContextAccessor _httpContextAccessor;
-    private IDataContext _context;
+    private readonly IDataContext _context;
+    protected readonly ILogger<AuthService> _logger;
 
     public AuthService(
         UserManager<IdentityUser> userManager,
         RoleManager<IdentityRole> roleManager,
         IConfiguration configuration,
         IHttpContextAccessor httpContextAccessor,
-        IDataContext context)
+        IDataContext context,
+        ILogger<AuthService> logger)
     {
         _userManager = userManager;
         _roleManager = roleManager;
         _configuration = configuration;
         _httpContextAccessor = httpContextAccessor;
         _context = context;
+        _logger = logger;
     }
 
     private async Task<TokenDto> GenerateJwtToken(IdentityUser user)
@@ -131,5 +135,52 @@ public class AuthService : IAuthService
             Username = user?.FindFirst(ClaimTypes.Name)?.Value,
             Role = user?.FindFirst(ClaimTypes.Role)?.Value,
         });
+    }
+    
+    public async Task<Response<string>> GetRoleFromTokenAsync(string token)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+            return new Response<string>(400, "Token is required");
+
+        try
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!);
+
+            var validationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                ValidIssuer = _configuration["Jwt:Issuer"],
+                ValidAudience = _configuration["Jwt:Audience"],
+                ClockSkew = TimeSpan.Zero,
+                IssuerSigningKey = new SymmetricSecurityKey(key)
+            };
+
+            var claimsPrincipal = tokenHandler.ValidateToken(token, validationParameters, out _);
+
+            var role = claimsPrincipal.FindFirst(ClaimTypes.Role)?.Value;
+
+            if (string.IsNullOrEmpty(role))
+                return new Response<string>(404, "Role not found in token");
+
+            return new Response<string>(200, "Role retrieved successfully", role);
+        }
+        catch (SecurityTokenExpiredException)
+        {
+            return new Response<string>(401, "Token has expired");
+        }
+        catch (SecurityTokenException ex)
+        {
+            _logger.LogError(ex, "Invalid token");
+            return new Response<string>(401, "Invalid token");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error validating token");
+            return new Response<string>(500, "An error occurred while validating the token");
+        }
     }
 }
