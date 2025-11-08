@@ -489,20 +489,30 @@ public class OrderService : IOrderService
             return new Response<bool>(500, "An error occurred while cancelling Order");
         }
     }
-    public async Task<Response<decimal>> GetOrderTotalAsync(int orderId)
+    public async Task<Response<GetOrderTotalDto>> GetOrderTotalAsync(int orderId)
     {
         var order = await _context.Orders
             .Include(o => o.OrderItems)
+            .Include(o => o.Discount)
             .FirstOrDefaultAsync(o => o.Id == orderId);
 
         if (order == null)
-            return new Response<decimal>(404, "Order not found");
+            return new Response<GetOrderTotalDto>(404, "Order not found");
 
         var total = order.OrderItems
             .Where(oi => oi.Status != OrderItemStatus.Cancelled)
             .Sum(oi => oi.PriceAtOrderTime * oi.Quantity);
 
-        return new Response<decimal>(200, "Total calculated successfully", total);
+        var result = new GetOrderTotalDto()
+        {
+            total = total
+        };
+        
+        if(order.DiscountId != null)
+            result.totalWithDiscount = total - total * order.Discount.DiscountPercent / 100;
+            
+
+        return new Response<GetOrderTotalDto>(200, "Total calculated successfully", result);
     }
 
 }
