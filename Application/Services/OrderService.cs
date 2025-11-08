@@ -116,6 +116,7 @@ public class OrderService : IOrderService
                     Status = o.Status,
                     TableId = o.TableId,
                     WaiterId = o.WaiterId,
+                    DiscountId = o.DiscountId,
                     OrderItems = o.OrderItems
                         .Where(oi => oi.Status != OrderItemStatus.Cancelled)
                         .Select(oi => new GetOrderItemDto
@@ -167,7 +168,7 @@ public class OrderService : IOrderService
 
         if (currentDiscount != null)
         {
-            order.Discount = currentDiscount;
+            order.DiscountId = currentDiscount.Id;
         }
 
         try
@@ -182,7 +183,8 @@ public class OrderService : IOrderService
                 CreatedAt = order.CreatedAt,
                 WaiterId = order.WaiterId,
                 TableId = order.TableId,
-                Status = order.Status
+                Status = order.Status,
+                DiscountId = order.DiscountId
             };
             _logger.LogInformation("Created new order {OrderId} for table {TableId}", order.Id, dto.TableId);
             return new Response<GetOrderDto>(200, "Order created successfully", result);
@@ -418,6 +420,7 @@ public class OrderService : IOrderService
         {
             if (orderItem.Status == OrderItemStatus.New)
                 orderItem.Status = OrderItemStatus.Cancelled;
+                
             if (orderItem.Status == OrderItemStatus.Ready)
                 orderItem.Status = OrderItemStatus.Served;
         }

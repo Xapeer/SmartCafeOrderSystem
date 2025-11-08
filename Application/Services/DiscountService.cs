@@ -33,6 +33,7 @@ public class DiscountService : IDiscountService
             .Select(d => new GetDiscountDto()
             {
                 Id = d.Id,
+                DiscountPercent = d.DiscountPercent,
                 StartTime = d.StartTime,
                 EndTime = d.EndTime
             })
@@ -49,6 +50,7 @@ public class DiscountService : IDiscountService
     {
         // Prevent overlapping discounts
         var isOverlapping = await _context.Discounts
+            .Where(d => d.EndTime > DateTime.UtcNow)
             .AnyAsync(d => d.StartTime < dto.EndTime && d.EndTime > dto.StartTime);
         if (isOverlapping)
             return new Response<GetDiscountDto>(400, "Discount for the given period already exists");
@@ -68,6 +70,7 @@ public class DiscountService : IDiscountService
             var result = new GetDiscountDto()
             {
                 Id = discount.Id,
+                DiscountPercent = discount.DiscountPercent,
                 StartTime = discount.StartTime,
                 EndTime = discount.EndTime
             };
