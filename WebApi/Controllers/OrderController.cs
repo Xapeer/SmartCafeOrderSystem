@@ -21,6 +21,15 @@ public class OrderController(IOrderService service) : Controller
         var response = await service.GetAllOrdersAsync(filter, pageNumber, pageSize);
         return StatusCode(response.StatusCode, response);
     }
+    
+    [HttpGet("get-all-orders-for-stats")]
+    public async Task<IActionResult> GetAllOrdersForStats(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10)
+    {
+        var response = await service.GetAllOrdersForStatsAsync(pageNumber, pageSize);
+        return StatusCode(response.StatusCode, response);
+    }
 
     [HttpGet("get-single-order")]
     public async Task<IActionResult> GetSingleOrder([FromQuery] SingleOrderFilter filter)
