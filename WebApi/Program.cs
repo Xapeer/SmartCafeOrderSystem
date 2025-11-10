@@ -26,7 +26,7 @@ builder.Host.UseSerilog();
 var connectionString = builder.Configuration.GetConnectionString("Default");
 builder.Services.AddDbContext<IDataContext, DataContext>(opt => opt.UseNpgsql(connectionString));
 builder.Services.AddSingleton<IConnectionMultiplexer>(
-    ConnectionMultiplexer.Connect("redis:6379"));
+    ConnectionMultiplexer.Connect("localhost:6379"));
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -37,7 +37,7 @@ builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IKitchenQueueService, KitchenQueueService>();
 builder.Services.AddScoped<IWaiterService, WaiterService>();
 builder.Services.AddScoped<IDiscountService, DiscountService>();
-
+builder.Services.AddScoped<IReportService, ReportService>();
 
 builder.Services.AddIdentityCore<IdentityUser>(config =>
     {
