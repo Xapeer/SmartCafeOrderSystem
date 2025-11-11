@@ -9,4 +9,5 @@ public interface IAuthService
     Task<Response<TokenDto>> LoginAsync(LoginDto dto);
     Response<ProfileDto> Profile();
     Task<Response<string>> GetRoleFromTokenAsync(string token);
+    Task<PagedResponse<GetWaiterDto>> GetWaitersAsync(int pageNumber = 1, int pageSize = 10);
 }

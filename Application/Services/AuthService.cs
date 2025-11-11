@@ -183,4 +183,21 @@ public class AuthService : IAuthService
             return new Response<string>(500, "An error occurred while validating the token");
         }
     }
+
+    public async Task<PagedResponse<GetWaiterDto>> GetWaitersAsync(int pageNumber = 1, int pageSize = 10)
+    {
+        var waiters = await _context.Employees
+            .OrderBy(e => e.Id)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .Select(employee => new GetWaiterDto
+            {
+                Id = employee.Id,
+                Name = employee.Name,
+            }).ToListAsync();
+        
+        var totalRecords = waiters.Count;
+        
+        return new PagedResponse<GetWaiterDto>(waiters, pageNumber, pageSize, totalRecords);
+    }
 }
