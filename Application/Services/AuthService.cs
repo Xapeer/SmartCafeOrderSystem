@@ -187,6 +187,7 @@ public class AuthService : IAuthService
     public async Task<PagedResponse<GetWaiterDto>> GetWaitersAsync(int pageNumber = 1, int pageSize = 10)
     {
         var waiters = await _context.Employees
+            .Include(e => e.IdentityUser)
             .OrderBy(e => e.Id)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
@@ -194,6 +195,7 @@ public class AuthService : IAuthService
             {
                 Id = employee.Id,
                 Name = employee.Name,
+                Username = employee.IdentityUser.UserName,
             }).ToListAsync();
         
         var totalRecords = waiters.Count;
