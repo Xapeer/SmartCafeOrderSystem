@@ -1,5 +1,6 @@
 using Application.Common;
 using Application.Dtos.MenuItem;
+using Application.Dtos.Report;
 using Application.Interfaces;
 using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -26,7 +27,6 @@ public class ReportService : IReportService
         
         return new Response<decimal>(200, "Revenue has been retrieved successfully", revenue);
     }
-
     public async Task<Response<decimal>> GetAverageCheckAsync()
     {
         var avgCheck = await _context.Orders
@@ -35,7 +35,6 @@ public class ReportService : IReportService
         
         return new Response<decimal>(200, "Average check has been retrieved successfully", avgCheck);
     }
-
     public async Task<Response<int>> GetOrderCountAsync()
     {
         var orderCount = await _context.Orders
@@ -44,7 +43,6 @@ public class ReportService : IReportService
         
         return new Response<int>(200, "Order count has been retrieved successfully", orderCount);
     }
-
     public async Task<PagedResponse<PopularMenuItemDto>> GetPopularMenuItemsAsync(int pageNumber = 1, int pageSize = 10)
     {
         var query = _context.OrderItems
@@ -71,7 +69,6 @@ public class ReportService : IReportService
             Message = "Popular menu items fetched successfully"
         };
     }
-
     public async Task<Response<TimeSpan>> GetAverageOrderDurationAsync()
     {
         try
@@ -100,5 +97,35 @@ public class ReportService : IReportService
             _logger.LogError(ex, "An error occurred while fetching the avg order time");
             return new Response<TimeSpan>(500, "An error occurred while fetching the avg order time");
         }
+    }
+    public async Task<PagedResponse<WaiterKpiDto>> GetWaiterRatingAsync(int pageNumber = 1, int pageSize = 10)
+    {
+        var query = from e in _context.Employees
+            join o in _context.Orders on e.Id equals o.WaiterId
+            where o.Status == OrderStatus.Paid && o.CreatedAt.Date == DateTime.UtcNow.Date
+            group o by new { e.Id, e.Name } into g
+            select new WaiterKpiDto
+            {
+                EmployeeId = g.Key.Id,
+                EmployeeName = g.Key.Name,
+                TotalRevenue = g.Sum(o => o.TotalAmount)
+            };
+
+        var kpiList = await query.ToListAsync();
+        
+        kpiList = kpiList.OrderByDescending(k => k.TotalRevenue).ToList();
+
+        var totalRecords = kpiList.Count;
+
+        var pagedKpiList = kpiList
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+
+        _logger.LogInformation("Fetched waiters rating");
+        return new PagedResponse<WaiterKpiDto>(pagedKpiList, pageNumber, pageSize, totalRecords)
+        {
+            Message = "Waiters rating fetched successfully"
+        };
     }
 }

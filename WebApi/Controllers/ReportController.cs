@@ -41,4 +41,11 @@ public class ReportController(IReportService service) : Controller
         var response = await service.GetPopularMenuItemsAsync(pageNumber, pageSize);
         return StatusCode(response.StatusCode, response);
     }
+    
+    [HttpGet("get-waiters-rating")]
+    public async Task<IActionResult> GetWaitersRating(int pageNumber = 1, int pageSize = 10)
+    {
+        var response = await service.GetWaiterRatingAsync(pageNumber, pageSize);
+        return StatusCode(response.StatusCode, response);
+    }
 }
