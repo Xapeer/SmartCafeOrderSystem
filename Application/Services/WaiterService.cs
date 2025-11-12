@@ -37,7 +37,7 @@ public class WaiterService : IWaiterService
         {
             var numberOfOrders = await _context.Orders
                 .CountAsync(o =>
-                    o.CreatedAt.Date == DateTime.Now.Date && o.WaiterId == employee.Id &&
+                    o.CreatedAt.Date == DateTime.Now.AddHours(5).Date && o.WaiterId == employee.Id &&
                     o.Status == OrderStatus.Paid);
 
             _logger.LogInformation("Number of orders fetched successfully");
@@ -67,7 +67,7 @@ public class WaiterService : IWaiterService
         {
             var ordersTotal = await _context.Orders
                 .Where(o =>
-                    o.CreatedAt.Date == DateTime.Now.Date && o.WaiterId == employee.Id &&
+                    o.CreatedAt.Date == DateTime.Now.AddHours(5).Date && o.WaiterId == employee.Id &&
                     o.Status == OrderStatus.Paid)
                 .SumAsync(o => o.TotalAmount);
 
@@ -98,7 +98,7 @@ public class WaiterService : IWaiterService
         {
             var timeSpans = await _context.Orders
                 .Where(o =>
-                    o.CreatedAt.Date == DateTime.Now.Date && o.WaiterId == employee.Id &&
+                    o.CreatedAt.Date == DateTime.Now.AddHours(5).Date && o.WaiterId == employee.Id &&
                     o.Status == OrderStatus.Paid && o.CompletedAt.HasValue)
                 .Select(o => o.CompletedAt.Value - o.CreatedAt)
                 .ToListAsync();

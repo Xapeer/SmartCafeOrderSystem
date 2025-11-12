@@ -64,7 +64,7 @@ public class AuthService : IAuthService
             claims.Add(new Claim(ClaimTypes.GivenName, name));
         }
 
-        var expireHours = double.Parse(_configuration["Jwt:ExpireHours"] ?? "1");
+        var expireHours = double.Parse(_configuration["Jwt:ExpireHours"] ?? "10");
         var expiresIn = DateTime.UtcNow.AddHours(expireHours);
 
         var token = new JwtSecurityToken(

@@ -88,7 +88,7 @@ public class KitchenQueueService : IKitchenQueueService
         }
 
         orderItem.Status = OrderItemStatus.Ready;
-        orderItem.CompletedAt = DateTime.Now;
+        orderItem.CompletedAt = DateTime.Now.AddHours(5);
 
         try
         {

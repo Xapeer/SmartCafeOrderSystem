@@ -22,7 +22,7 @@ public class DiscountService : IDiscountService
     public async Task<PagedResponse<GetDiscountDto>> GetAllActiveDiscountsAsync(int pageNumber = 1, int pageSize = 10)
     {
         var query = _context.Discounts
-            .Where(d => d.IsActive && d.EndTime > DateTime.Now && d.StartTime < DateTime.Now);
+            .Where(d => d.IsActive && d.EndTime > DateTime.Now.AddHours(5) && d.StartTime < DateTime.Now.AddHours(5));
 
         var totalRecords = await query.CountAsync();
 
@@ -49,7 +49,7 @@ public class DiscountService : IDiscountService
     public async Task<Response<GetDiscountDto>> CreateDiscountAsync(CreateDiscountDto dto)
     {
         var isOverlapping = await _context.Discounts
-            .Where(d => d.IsActive && d.EndTime > DateTime.Now)
+            .Where(d => d.IsActive && d.EndTime > DateTime.Now.AddHours(5))
             .AnyAsync(d => d.StartTime < dto.EndTime && d.EndTime > dto.StartTime);
 
         if (isOverlapping)
