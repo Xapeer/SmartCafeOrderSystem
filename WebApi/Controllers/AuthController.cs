@@ -32,11 +32,19 @@ public class AuthController(IAuthService service): Controller
         return StatusCode(response.StatusCode, response);
     }
     
-    [HttpPost("get-role-from-token")]
+    [HttpGet("get-role-from-token")]
     public async Task<IActionResult> GetRoleFromToken([FromBody] string token)
     {
         var response = await service.GetRoleFromTokenAsync(token);
         return StatusCode(response.StatusCode, response);
     }
     
+    [HttpGet("get-all-waiters")]
+    public async Task<IActionResult> GetAllWaiters(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10)
+    {
+        var response = await service.GetWaitersAsync(pageNumber, pageSize);
+        return StatusCode(response.StatusCode, response);
+    }
 }

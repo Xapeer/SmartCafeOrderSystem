@@ -17,4 +17,5 @@ public interface IOrderService
     Task<PagedResponse<GetOrderDto>> GetAllOrdersAsync(AllOrderFilter filter, int pageNumber = 1, int pageSize = 10);
     Task<Response<GetOrderTotalDto>> GetOrderTotalAsync(int orderId);
     Task<Response<bool>> ServeOrderItemAsync(int orderItemId);
+    Task<PagedResponse<GetOrderForStatsDto>> GetAllOrdersForStatsAsync(int pageNumber = 1, int pageSize = 10);
 }

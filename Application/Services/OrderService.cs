@@ -83,6 +83,49 @@ public class OrderService : IOrderService
             };
         }
     }
+    public async Task<PagedResponse<GetOrderForStatsDto>> GetAllOrdersForStatsAsync(int pageNumber = 1, int pageSize = 10)
+    {
+        var query = _context.Orders.AsQueryable();
+
+        var totalRecords = await query.CountAsync();
+
+        try
+        {
+            var orders = await query
+                .Include(o => o.Waiter)
+                .Where(o => o.Status != OrderStatus.Cancelled)
+                .OrderByDescending(o => o.Id)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .Select(o => new GetOrderForStatsDto()
+                {
+                    Id = o.Id,
+                    CreatedAt = o.CreatedAt,
+                    TableId = o.TableId,
+                    WaiterName = o.Waiter.Name,
+                    Status = o.Status,
+                    CurrentTotal = o.OrderItems
+                        .Where(oi => oi.Status != OrderItemStatus.New && oi.Status != OrderItemStatus.Cancelled)
+                        .Sum(oi => oi.PriceAtOrderTime * oi.Quantity)
+                })
+                .OrderByDescending(o => o.CreatedAt)
+                .ToListAsync();
+
+            _logger.LogInformation("Orders fetched successfully");
+            return new PagedResponse<GetOrderForStatsDto>(orders, pageNumber, pageSize, totalRecords)
+            {
+                Message = "Orders fetched successfully"
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching orders");
+            return new PagedResponse<GetOrderForStatsDto>(new List<GetOrderForStatsDto>(), pageNumber, pageSize, 0)
+            {
+                Message = "An error occurred while fetching the orders"
+            };
+        }
+    }
     public async Task<Response<GetOrderWithItemsDto>> GetSingleOrderAsync(SingleOrderFilter filter)
     {
         var query = _context.Orders
