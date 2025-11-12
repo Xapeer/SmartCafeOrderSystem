@@ -72,8 +72,9 @@ namespace Infrastructure.Migrations
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     DiscountPercent = table.Column<decimal>(type: "numeric", nullable: false),
-                    StartTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    EndTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    StartTime = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                    EndTime = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -250,8 +251,8 @@ namespace Infrastructure.Migrations
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    CompletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                    CompletedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
                     TotalAmount = table.Column<decimal>(type: "numeric", nullable: false),
                     DiscountAmount = table.Column<decimal>(type: "numeric", nullable: false),
                     Status = table.Column<int>(type: "integer", nullable: false),
@@ -294,8 +295,8 @@ namespace Infrastructure.Migrations
                     PriceAtOrderTime = table.Column<decimal>(type: "numeric", nullable: false),
                     Notes = table.Column<string>(type: "text", nullable: false),
                     Status = table.Column<int>(type: "integer", nullable: false),
-                    StartedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    CompletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                    StartedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                    CompletedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: true)
                 },
                 constraints: table =>
                 {

@@ -193,7 +193,7 @@ public class OrderService : IOrderService
             .FirstOrDefaultAsync(t => t.Id == dto.TableId);
         
         var currentDiscount = await _context.Discounts
-            .FirstOrDefaultAsync(d => d.EndTime > DateTime.UtcNow && d.StartTime < DateTime.UtcNow);
+            .FirstOrDefaultAsync(d => d.IsActive && d.EndTime > DateTime.Now && d.StartTime < DateTime.Now);
 
         if (tableExists == null)
             return new Response<GetOrderDto>(400, "Invalid table ID");
@@ -412,14 +412,14 @@ public class OrderService : IOrderService
             if (orderItem.MenuItem.PrepTime > new TimeSpan(0,0,0))
             {
                 orderItem.Status = OrderItemStatus.Started;
-                orderItem.StartedAt = DateTime.UtcNow;
+                orderItem.StartedAt = DateTime.Now;
                 await _kitchenQueueService.EnqueueOrderItemAsync(orderItem.Id);
             }
             else
             {
                 orderItem.Status = OrderItemStatus.Ready;
-                orderItem.StartedAt = DateTime.UtcNow;
-                orderItem.CompletedAt = DateTime.UtcNow;
+                orderItem.StartedAt = DateTime.Now;
+                orderItem.CompletedAt = DateTime.Now;
             }
         }
 
@@ -478,7 +478,7 @@ public class OrderService : IOrderService
         orderExists.TotalAmount = total - orderExists.DiscountAmount;
         orderTable.IsFree = true;
         orderExists.Status = OrderStatus.Paid;
-        orderExists.CompletedAt = DateTime.UtcNow;
+        orderExists.CompletedAt = DateTime.Now;
         
         try
         {

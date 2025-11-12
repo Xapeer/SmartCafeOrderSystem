@@ -21,13 +21,13 @@ public class DiscountService : IDiscountService
 
     public async Task<PagedResponse<GetDiscountDto>> GetAllActiveDiscountsAsync(int pageNumber = 1, int pageSize = 10)
     {
-        var query = _context.Discounts.AsQueryable()
-            .Where(d => d.EndTime > DateTime.UtcNow && d.StartTime < DateTime.UtcNow);
+        var query = _context.Discounts
+            .Where(d => d.IsActive && d.EndTime > DateTime.Now && d.StartTime < DateTime.Now);
 
         var totalRecords = await query.CountAsync();
 
         var discounts = await query
-            .OrderBy(c => c.Id)
+            .OrderBy(d => d.Id)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .Select(d => new GetDiscountDto()
@@ -39,34 +39,35 @@ public class DiscountService : IDiscountService
             })
             .ToListAsync();
 
-        _logger.LogInformation("Fetched {Count} discounts", discounts.Count);
+        _logger.LogInformation("Fetched {Count} active discounts", discounts.Count);
         return new PagedResponse<GetDiscountDto>(discounts, pageNumber, pageSize, totalRecords)
         {
-            Message = "Discounts fetched successfully"
+            Message = "Active discounts fetched successfully"
         };
     }
     
     public async Task<Response<GetDiscountDto>> CreateDiscountAsync(CreateDiscountDto dto)
     {
-        // Prevent overlapping discounts
         var isOverlapping = await _context.Discounts
-            .Where(d => d.EndTime > DateTime.UtcNow)
+            .Where(d => d.IsActive && d.EndTime > DateTime.Now)
             .AnyAsync(d => d.StartTime < dto.EndTime && d.EndTime > dto.StartTime);
+
         if (isOverlapping)
             return new Response<GetDiscountDto>(400, "Discount for the given period already exists");
-        
+
         var discount = new Discount()
         {
             DiscountPercent = dto.DiscountPercent,
             StartTime = dto.StartTime,
-            EndTime = dto.EndTime
+            EndTime = dto.EndTime,
+            IsActive = true
         };
 
         try
         {
             _context.Discounts.Add(discount);
             await _context.SaveChangesAsync();
-            
+
             var result = new GetDiscountDto()
             {
                 Id = discount.Id,
@@ -88,18 +89,18 @@ public class DiscountService : IDiscountService
     public async Task<Response<bool>> EndDiscountAsync(int discountId)
     {
         var discount = await _context.Discounts
-            .FirstOrDefaultAsync(c => c.Id == discountId);
+            .FirstOrDefaultAsync(c => c.Id == discountId && c.IsActive);
 
         if (discount == null)
         {
-            return new Response<bool>(400, "Discount not found", false);
+            return new Response<bool>(400, "Discount not found or already ended", false);
         }
 
         try
         {
-            discount.EndTime = DateTime.UtcNow;
+            discount.IsActive = false;
             await _context.SaveChangesAsync();
-            
+
             _logger.LogInformation("Ended discount {Discount}", discount.Id);
             return new Response<bool>(200, "Discount ended successfully", true);
         }

@@ -16,6 +16,11 @@ public class DataContext(DbContextOptions<DataContext> options) : IdentityDbCont
     public DbSet<OrderItem> OrderItems { get; set; }
     public DbSet<Table> Tables { get; set; }
     
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        configurationBuilder.Properties<DateTime>()
+            .HaveColumnType("timestamp without time zone");
+    }
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);

@@ -22,7 +22,7 @@ public class ReportService : IReportService
     public async Task<Response<decimal>> GetTodayRevenueAsync()
     {
         var revenue = await _context.Orders
-            .Where(o => o.CreatedAt.Date == DateTime.UtcNow.Date && o.Status == OrderStatus.Paid)
+            .Where(o => o.CreatedAt.Date == DateTime.Now.Date && o.Status == OrderStatus.Paid)
             .SumAsync(o => o.TotalAmount);
         
         return new Response<decimal>(200, "Revenue has been retrieved successfully", revenue);
@@ -30,7 +30,7 @@ public class ReportService : IReportService
     public async Task<Response<decimal>> GetAverageCheckAsync()
     {
         var avgCheck = await _context.Orders
-            .Where(o => o.CreatedAt.Date == DateTime.UtcNow.Date && o.Status == OrderStatus.Paid)
+            .Where(o => o.CreatedAt.Date == DateTime.Now.Date && o.Status == OrderStatus.Paid)
             .AverageAsync(o => o.TotalAmount);
         
         return new Response<decimal>(200, "Average check has been retrieved successfully", avgCheck);
@@ -38,7 +38,7 @@ public class ReportService : IReportService
     public async Task<Response<int>> GetOrderCountAsync()
     {
         var orderCount = await _context.Orders
-            .Where(o => o.CreatedAt.Date == DateTime.UtcNow.Date && o.Status == OrderStatus.Paid)
+            .Where(o => o.CreatedAt.Date == DateTime.Now.Date && o.Status == OrderStatus.Paid)
             .CountAsync();
         
         return new Response<int>(200, "Order count has been retrieved successfully", orderCount);
@@ -46,7 +46,7 @@ public class ReportService : IReportService
     public async Task<PagedResponse<PopularMenuItemDto>> GetPopularMenuItemsAsync(int pageNumber = 1, int pageSize = 10)
     {
         var query = _context.OrderItems
-            .Where(oi => oi.Status == OrderItemStatus.Served && oi.StartedAt.Value.Date == DateTime.UtcNow.Date)
+            .Where(oi => oi.Status == OrderItemStatus.Served && oi.StartedAt.Value.Date == DateTime.Now.Date)
             .GroupBy(oi => new { oi.MenuItemId, oi.MenuItem.Name })
             .Select(g => new PopularMenuItemDto
             {
@@ -75,7 +75,7 @@ public class ReportService : IReportService
         {
             var timeSpans = await _context.Orders
                 .Where(o =>
-                    o.CreatedAt.Date == DateTime.UtcNow.Date &&
+                    o.CreatedAt.Date == DateTime.Now.Date &&
                     o.Status == OrderStatus.Paid && o.CompletedAt.HasValue)
                 .Select(o => o.CompletedAt.Value - o.CreatedAt)
                 .ToListAsync();
@@ -102,7 +102,7 @@ public class ReportService : IReportService
     {
         var query = from e in _context.Employees
             join o in _context.Orders on e.Id equals o.WaiterId
-            where o.Status == OrderStatus.Paid && o.CreatedAt.Date == DateTime.UtcNow.Date
+            where o.Status == OrderStatus.Paid && o.CreatedAt.Date == DateTime.Now.Date
             group o by new { e.Id, e.Name } into g
             select new WaiterKpiDto
             {
